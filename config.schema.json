@@ -1,0 +1,89 @@
+{
+  "pluginAlias": "VimarViewCloud",
+  "pluginType": "platform",
+  "singular": false,
+  "headerDisplay": "Collega i dispositivi Vimar View (termostato Wi-Fi 02912, luci, dimmer e tapparelle View Wireless) tramite il cloud Vimar. Plugin **non ufficiale**: richiede connessione internet.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": { "title": "Nome", "type": "string", "default": "Vimar View", "required": true },
+      "username": { "title": "E-mail MyVimar", "type": "string", "format": "email", "required": true },
+      "password": { "title": "Password MyVimar", "type": "string", "required": true, "x-schema-form": { "type": "password" } },
+      "duid": {
+        "title": "DUID",
+        "type": "string",
+        "required": true,
+        "description": "App View → Impostazioni → Info di sistema (voce \"BLEG\" per il gateway). Formato tipo 000000AAA00000."
+      },
+      "enableCooling": {
+        "title": "Abilita raffrescamento",
+        "type": "boolean",
+        "default": false,
+        "description": "Mostra la modalità 'Raffredda' sul termostato (solo se l'impianto la supporta)."
+      },
+      "onMode": {
+        "title": "Accensione del termostato da HomeKit",
+        "type": "string",
+        "default": "Auto",
+        "oneOf": [
+          { "title": "Segui il programma settimanale (Auto)", "enum": ["Auto"] },
+          { "title": "Manuale permanente", "enum": ["Manual"] }
+        ]
+      },
+      "scheduleSwitch": {
+        "title": "Interruttore \"Programma\"",
+        "type": "boolean",
+        "default": true,
+        "description": "Aggiunge un interruttore: acceso = segue il programma settimanale, spento = manuale permanente."
+      },
+      "minTemperature": { "title": "Setpoint minimo (°C)", "type": "number", "default": 5, "minimum": 0, "maximum": 20 },
+      "maxTemperature": { "title": "Setpoint massimo (°C)", "type": "number", "default": 35, "minimum": 20, "maximum": 40 },
+      "deviceTypes": {
+        "title": "Tipi di dispositivo da esporre",
+        "type": "array",
+        "uniqueItems": true,
+        "default": ["thermostat", "light", "dimmer", "shutter", "switch"],
+        "items": {
+          "type": "string",
+          "oneOf": [
+            { "title": "Termostati", "enum": ["thermostat"] },
+            { "title": "Luci on/off", "enum": ["light"] },
+            { "title": "Dimmer", "enum": ["dimmer"] },
+            { "title": "Tapparelle", "enum": ["shutter"] },
+            { "title": "Automazioni on/off", "enum": ["switch"] },
+            { "title": "Scenari", "enum": ["scene"] }
+          ]
+        }
+      },
+      "exclude": {
+        "title": "Escludi (nome o idsf)",
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "debug": {
+        "title": "Debug",
+        "type": "boolean",
+        "default": false,
+        "description": "Elenca nel log tutte le funzioni trovate e il traffico WebSocket (abilita anche il debug di Homebridge per vedere il traffico)."
+      }
+    }
+  },
+  "layout": [
+    "name",
+    "username",
+    "password",
+    "duid",
+    {
+      "type": "fieldset",
+      "title": "Termostato",
+      "expandable": true,
+      "items": ["onMode", "scheduleSwitch", "enableCooling", "minTemperature", "maxTemperature"]
+    },
+    {
+      "type": "fieldset",
+      "title": "Avanzate",
+      "expandable": true,
+      "items": ["deviceTypes", "exclude", "debug"]
+    }
+  ]
+}

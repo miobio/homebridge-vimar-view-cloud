@@ -1,0 +1,32 @@
+{
+  "name": "homebridge-vimar-view-cloud",
+  "displayName": "Vimar View Cloud",
+  "version": "0.1.0",
+  "description": "Homebridge plugin for Vimar View devices (Wi-Fi thermostat 02912, View Wireless lights, dimmers, shutters) via the Vimar cloud.",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "miobio",
+  "homepage": "https://github.com/miobio/homebridge-vimar-view-cloud#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/miobio/homebridge-vimar-view-cloud.git"
+  },
+  "bugs": {
+    "url": "https://github.com/miobio/homebridge-vimar-view-cloud/issues"
+  },
+  "keywords": ["homebridge-plugin", "homebridge", "vimar", "view", "view wireless", "02912", "thermostat", "homekit"],
+  "engines": {
+    "node": "^18.20.0 || ^20.15.0 || ^22.0.0 || ^24.0.0",
+    "homebridge": "^1.8.0 || ^2.0.0-beta.0"
+  },
+  "files": ["index.js", "lib", "config.schema.json", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "hap-nodejs": "^1.1.0"
+  }
+}
