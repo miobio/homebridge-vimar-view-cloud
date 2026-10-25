@@ -40,7 +40,7 @@ Oppure da sorgente: copia la cartella sul server Homebridge, poi `npm install` e
   "name": "Vimar View",
   "username": "tua@email.it",
   "password": "password MyVimar",
-  "duid": "000000AAA00000",
+  "duid": "013009FAL00087, 013009FAL00117",
   "onMode": "Auto",
   "scheduleSwitch": true,
   "enableCooling": false,
@@ -55,7 +55,7 @@ Oppure da sorgente: copia la cartella sul server Homebridge, poi `npm install` e
 | Chiave | Default | Descrizione |
 |---|---|---|
 | `username`, `password` | — | credenziali **MyVimar**, le stesse dell'app View |
-| `duid` | — | identificativo del gateway o dispositivo (vedi sotto) |
+| `duid` | — | uno o più DUID separati da virgola (vedi sotto) |
 | `onMode` | `Auto` | modalità usata quando accendi il termostato da HomeKit: `Auto` (programma) o `Manual` |
 | `scheduleSwitch` | `true` | aggiunge l'interruttore "Programma" |
 | `enableCooling` | `false` | mostra la modalità Raffredda |
@@ -66,13 +66,18 @@ Oppure da sorgente: copia la cartella sul server Homebridge, poi `npm install` e
 
 ### Dove trovo il DUID
 
-App **View** → **Impostazioni** → **Info di sistema**: il DUID del gateway è la voce **BLEG** (formato `000000AAA00000`).
+App **View** → **Impostazioni** → **Info di sistema** → sezione **"Informazioni sui dispositivi gateway"**. Ogni dispositivo connesso al cloud ha il suo codice, formato `013009FAL00087`:
 
-Per un termostato 02912 **senza gateway** non è documentato quale identificativo usare. Prova con l'ID che l'app mostra per il termostato in *Info di sistema* o nella scheda del dispositivo. Se l'attach viene rifiutato, il log lo segnala esplicitamente: in quel caso l'unico modo certo è leggere il `duid` nell'URL WebSocket dell'app (`wss://prod.vimar.cloud/wssmqtt/deviceproxy?duid=…`) con un proxy come mitmproxy.
+- **termostati Wi-Fi 02912** stand-alone: ogni termostato compare come **STW** e ha il **suo** DUID;
+- impianti **View Wireless**: il DUID è quello del gateway (**BLEG**).
+
+Se hai più dispositivi, inseriscili tutti separati da virgola: `"duid": "013009FAL00087, 013009FAL00117, 013009FAL00123"`. Il plugin fa un solo login e apre una connessione per ciascuno.
+
+⚠️ **Non** usare l'*UID impianto* (quello con i trattini, tipo `9BF5F94A-…`): il cloud chiude la connessione con codice **1013** e nel log compare `closed before attach`.
 
 ## Note tecniche
 
-- **Autenticazione**: OAuth2 Authorization Code + PKCE sul Keycloak `prod.vimar.cloud` (client `mobile-user-view2`). Il refresh token viene salvato in `<storage Homebridge>/.vimar-view-cloud-<DUID>.json` (permessi 600), così ai riavvii non serve rifare il login completo.
+- **Autenticazione**: OAuth2 Authorization Code + PKCE sul Keycloak `prod.vimar.cloud` (client `mobile-user-view2`). Il refresh token (uno per account, condiviso da tutti i DUID) viene salvato in `<storage Homebridge>/.vimar-view-cloud-<hash utente>.json` (permessi 600), così ai riavvii non serve rifare il login completo.
 - **Connessione**: WebSocket persistente in push (`changestatus`), keepalive ogni 25 s, riconnessione con backoff da 5 a 60 s. In caso di errore di **autenticazione** riprova ogni 10 minuti, per non far bloccare l'account.
 - **Disponibilità**: durante brevi disconnessioni Casa mostra l'ultimo stato noto. Dopo 3 minuti di cloud irraggiungibile gli accessori risultano "Nessuna risposta".
 - **Cache accessori**: se una discovery torna vuota (cloud in difficoltà) gli accessori **non** vengono rimossi, per non perdere le tue automazioni HomeKit.

@@ -63,15 +63,36 @@ function startMockCloud() {
   const wss = new WebSocketServer({ server, path: '/ws' });
   wss.on('connection', (ws, req) => {
     const q = new URL(req.url, 'http://x').searchParams;
-    assert.strictEqual(q.get('duid'), '000000AAA00000');
+    const duid = q.get('duid');
+    if (!['000000AAA00000', '013009FAL00117'].includes(duid)) {
+      ws.close(1013); // what the real cloud does with an unknown/offline DUID
+      return;
+    }
+    ws.duid = duid;
     sockets.push(ws);
     ws.on('message', (raw) => {
       const m = JSON.parse(raw);
+      m._duid = duid;
       received.push(m);
       const reply = (result) => ws.send(JSON.stringify({ type: 'response', function: m.function, msgid: m.msgid, error: 0, result }));
       if (m.function === 'attach') {
         assert.strictEqual(m.args[0].credential.useruid, 'user-uid-1');
         reply([{ token: 'SESSION', plantname: 'Casa Folgaria', serverinfo: { softwareversion: '1.2.3', mac: 'aa' } }]);
+      } else if (m.function === 'sfdiscovery' && duid === '013009FAL00117') {
+        reply([{
+          idambient: 2,
+          name: 'Camera',
+          sf: [{
+            idsf: 101, name: 'Termostato camera', sstype: 'SS_Clima_Zone',
+            elements: [
+              { sfetype: 'SFE_State_AmbientTemperature', value: '16.0' },
+              { sfetype: 'SFE_State_AmbientSetpoint', value: '17.0' },
+              { sfetype: 'SFE_State_HVACMode', value: 'Manual' },
+              { sfetype: 'SFE_State_ChangeOverMode', value: 'Heating' },
+              { sfetype: 'SFE_State_OutStatus', value: 'Off' },
+            ],
+          }],
+        }]);
       } else if (m.function === 'sfdiscovery') {
         reply([{
           idambient: 1,

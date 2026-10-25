@@ -6,14 +6,32 @@
   "schema": {
     "type": "object",
     "properties": {
-      "name": { "title": "Nome", "type": "string", "default": "Vimar View", "required": true },
-      "username": { "title": "E-mail MyVimar", "type": "string", "format": "email", "required": true },
-      "password": { "title": "Password MyVimar", "type": "string", "required": true, "x-schema-form": { "type": "password" } },
-      "duid": {
-        "title": "DUID",
+      "name": {
+        "title": "Nome",
+        "type": "string",
+        "default": "Vimar View",
+        "required": true
+      },
+      "username": {
+        "title": "E-mail MyVimar",
+        "type": "string",
+        "format": "email",
+        "required": true
+      },
+      "password": {
+        "title": "Password MyVimar",
         "type": "string",
         "required": true,
-        "description": "App View → Impostazioni → Info di sistema (voce \"BLEG\" per il gateway). Formato tipo 000000AAA00000."
+        "x-schema-form": {
+          "type": "password"
+        }
+      },
+      "duid": {
+        "title": "DUID dei dispositivi",
+        "type": "string",
+        "required": true,
+        "placeholder": "013009FAL00087, 013009FAL00117, 013009FAL00123",
+        "description": "App View → Impostazioni → Info di sistema → \"Informazioni sui dispositivi gateway\": il codice sotto ogni dispositivo (es. STW 013009FAL00087). Più DUID separati da virgola. NON usare l'UID impianto."
       },
       "enableCooling": {
         "title": "Abilita raffrescamento",
@@ -26,8 +44,18 @@
         "type": "string",
         "default": "Auto",
         "oneOf": [
-          { "title": "Segui il programma settimanale (Auto)", "enum": ["Auto"] },
-          { "title": "Manuale permanente", "enum": ["Manual"] }
+          {
+            "title": "Segui il programma settimanale (Auto)",
+            "enum": [
+              "Auto"
+            ]
+          },
+          {
+            "title": "Manuale permanente",
+            "enum": [
+              "Manual"
+            ]
+          }
         ]
       },
       "scheduleSwitch": {
@@ -36,29 +64,79 @@
         "default": true,
         "description": "Aggiunge un interruttore: acceso = segue il programma settimanale, spento = manuale permanente."
       },
-      "minTemperature": { "title": "Setpoint minimo (°C)", "type": "number", "default": 5, "minimum": 0, "maximum": 20 },
-      "maxTemperature": { "title": "Setpoint massimo (°C)", "type": "number", "default": 35, "minimum": 20, "maximum": 40 },
+      "minTemperature": {
+        "title": "Setpoint minimo (°C)",
+        "type": "number",
+        "default": 5,
+        "minimum": 0,
+        "maximum": 20
+      },
+      "maxTemperature": {
+        "title": "Setpoint massimo (°C)",
+        "type": "number",
+        "default": 35,
+        "minimum": 20,
+        "maximum": 40
+      },
       "deviceTypes": {
         "title": "Tipi di dispositivo da esporre",
         "type": "array",
         "uniqueItems": true,
-        "default": ["thermostat", "light", "dimmer", "shutter", "switch"],
+        "default": [
+          "thermostat",
+          "light",
+          "dimmer",
+          "shutter",
+          "switch"
+        ],
         "items": {
           "type": "string",
           "oneOf": [
-            { "title": "Termostati", "enum": ["thermostat"] },
-            { "title": "Luci on/off", "enum": ["light"] },
-            { "title": "Dimmer", "enum": ["dimmer"] },
-            { "title": "Tapparelle", "enum": ["shutter"] },
-            { "title": "Automazioni on/off", "enum": ["switch"] },
-            { "title": "Scenari", "enum": ["scene"] }
+            {
+              "title": "Termostati",
+              "enum": [
+                "thermostat"
+              ]
+            },
+            {
+              "title": "Luci on/off",
+              "enum": [
+                "light"
+              ]
+            },
+            {
+              "title": "Dimmer",
+              "enum": [
+                "dimmer"
+              ]
+            },
+            {
+              "title": "Tapparelle",
+              "enum": [
+                "shutter"
+              ]
+            },
+            {
+              "title": "Automazioni on/off",
+              "enum": [
+                "switch"
+              ]
+            },
+            {
+              "title": "Scenari",
+              "enum": [
+                "scene"
+              ]
+            }
           ]
         }
       },
       "exclude": {
         "title": "Escludi (nome o idsf)",
         "type": "array",
-        "items": { "type": "string" }
+        "items": {
+          "type": "string"
+        }
       },
       "debug": {
         "title": "Debug",
@@ -77,13 +155,23 @@
       "type": "fieldset",
       "title": "Termostato",
       "expandable": true,
-      "items": ["onMode", "scheduleSwitch", "enableCooling", "minTemperature", "maxTemperature"]
+      "items": [
+        "onMode",
+        "scheduleSwitch",
+        "enableCooling",
+        "minTemperature",
+        "maxTemperature"
+      ]
     },
     {
       "type": "fieldset",
       "title": "Avanzate",
       "expandable": true,
-      "items": ["deviceTypes", "exclude", "debug"]
+      "items": [
+        "deviceTypes",
+        "exclude",
+        "debug"
+      ]
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "name": "homebridge-vimar-view-cloud",
   "displayName": "Vimar View Cloud",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Homebridge plugin for Vimar View devices (Wi-Fi thermostat 02912, View Wireless lights, dimmers, shutters) via the Vimar cloud.",
   "main": "index.js",
   "license": "MIT",

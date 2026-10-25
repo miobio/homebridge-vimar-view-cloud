@@ -68,7 +68,8 @@ test('login, discovery, state and commands', async () => {
   try {
     await waitFor(() => api.registered.length === 3);
     // refresh token persisted
-    const saved = JSON.parse(fs.readFileSync(path.join(storage, '.vimar-view-cloud-000000AAA00000.json'), 'utf8'));
+    const tokenFile = fs.readdirSync(storage).find((f) => f.startsWith('.vimar-view-cloud-'));
+    const saved = JSON.parse(fs.readFileSync(path.join(storage, tokenFile), 'utf8'));
     assert.strictEqual(saved.refreshToken, 'REFRESH-1');
 
     // register sent only State_ sfetypes
@@ -157,4 +158,36 @@ test('wrong password is an auth error, not a crash', async () => {
   });
   await assert.rejects(() => c.login(), VimarAuthError);
   await cloud.close();
+});
+
+test('several DUIDs: one login, one connection each, separate accessories', async () => {
+  const cloud = await startMockCloud();
+  const storage = fs.mkdtempSync(path.join(os.tmpdir(), 'vimar-'));
+  const api = fakeApi(storage);
+  const base = `http://127.0.0.1:${cloud.port}`;
+  const platform = new VimarViewCloudPlatform(log, {
+    username: 'me@example.com', password: 'secret', duid: '000000aaa00000, 013009FAL00117',
+    _endpoints: { authUrl: `${base}/auth`, tokenUrl: `${base}/token`, wsUrl: `ws://127.0.0.1:${cloud.port}/ws` },
+  }, api);
+  api.emit('didFinishLaunching');
+  try {
+    await waitFor(() => api.registered.length === 4, 6000);
+    assert.strictEqual(cloud.httpLog.filter((l) => l === 'POST /login').length, 1);
+    const Ch = hap.Characteristic;
+    const camera = api.registered.find((a) => a.context.duid === '013009FAL00117');
+    assert.strictEqual(camera.displayName, 'Termostato camera');
+    const ts = camera.getService(hap.Service.Thermostat);
+    assert.strictEqual(ts.getCharacteristic(Ch.TargetTemperature).value, 17);
+    cloud.received.length = 0;
+    await ts.getCharacteristic(Ch.TargetTemperature).handleSetRequest(19);
+    const sent = cloud.received.filter((m) => m.function === 'doaction');
+    assert.deepStrictEqual(sent.map((m) => [m._duid, m.target, m.args[0].value]), [['013009FAL00117', '013009FAL00117', '19.0']]);
+    // the other thermostat (same idsf 101, other DUID) is untouched
+    const main = api.registered.find((a) => a.context.duid === '000000AAA00000' && a.context.device.idsf === 101);
+    assert.strictEqual(main.getService(hap.Service.Thermostat).getCharacteristic(Ch.TargetTemperature).value, 20);
+    await waitFor(() => ts.getCharacteristic(Ch.TargetTemperature).value === 19);
+  } finally {
+    platform.links.forEach((l) => l.client.stop());
+    await cloud.close();
+  }
 });
