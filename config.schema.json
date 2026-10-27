@@ -2,24 +2,24 @@
   "pluginAlias": "VimarViewCloud",
   "pluginType": "platform",
   "singular": false,
-  "headerDisplay": "Collega i dispositivi Vimar View (termostato Wi-Fi 02912, luci, dimmer e tapparelle View Wireless) tramite il cloud Vimar. Plugin **non ufficiale**: richiede connessione internet.",
+  "headerDisplay": "Connects Vimar View devices (Wi-Fi thermostat 02912 and View Wireless lights, dimmers and shutters) to HomeKit through the Vimar cloud. **Unofficial** plugin: requires an internet connection.",
   "schema": {
     "type": "object",
     "properties": {
       "name": {
-        "title": "Nome",
+        "title": "Name",
         "type": "string",
         "default": "Vimar View",
         "required": true
       },
       "username": {
-        "title": "E-mail MyVimar",
+        "title": "MyVimar e-mail",
         "type": "string",
         "format": "email",
         "required": true
       },
       "password": {
-        "title": "Password MyVimar",
+        "title": "MyVimar password",
         "type": "string",
         "required": true,
         "x-schema-form": {
@@ -27,31 +27,31 @@
         }
       },
       "duid": {
-        "title": "DUID dei dispositivi",
+        "title": "Device DUIDs",
         "type": "string",
         "required": true,
         "placeholder": "013009FAL00087, 013009FAL00117, 013009FAL00123",
-        "description": "App View → Impostazioni → Info di sistema → \"Informazioni sui dispositivi gateway\": il codice sotto ogni dispositivo (es. STW 013009FAL00087). Più DUID separati da virgola. NON usare l'UID impianto."
+        "description": "View app → Settings → System info → \"Gateway devices\": the code under each device (e.g. STW 013009FAL00087). Separate multiple DUIDs with commas. Do NOT use the plant UID."
       },
       "enableCooling": {
-        "title": "Abilita raffrescamento",
+        "title": "Enable cooling",
         "type": "boolean",
         "default": false,
-        "description": "Mostra la modalità 'Raffredda' sul termostato (solo se l'impianto la supporta)."
+        "description": "Show the 'Cool' mode on thermostats (only if your system supports it)."
       },
       "onMode": {
-        "title": "Accensione del termostato da HomeKit",
+        "title": "Mode used when turning a thermostat on from HomeKit",
         "type": "string",
         "default": "Auto",
         "oneOf": [
           {
-            "title": "Segui il programma settimanale (Auto)",
+            "title": "Follow the weekly schedule (Auto)",
             "enum": [
               "Auto"
             ]
           },
           {
-            "title": "Manuale permanente",
+            "title": "Permanent manual",
             "enum": [
               "Manual"
             ]
@@ -59,27 +59,34 @@
         ]
       },
       "scheduleSwitch": {
-        "title": "Interruttore \"Programma\"",
+        "title": "\"Schedule\" switch",
         "type": "boolean",
         "default": true,
-        "description": "Aggiunge un interruttore: acceso = segue il programma settimanale, spento = manuale permanente."
+        "description": "Adds a switch per thermostat: on = follow the weekly schedule, off = permanent manual."
+      },
+      "scheduleSwitchName": {
+        "title": "Schedule switch label",
+        "type": "string",
+        "default": "Schedule",
+        "placeholder": "Schedule",
+        "description": "Appended to the thermostat name (e.g. \"Living Schedule\")."
       },
       "minTemperature": {
-        "title": "Setpoint minimo (°C)",
+        "title": "Minimum setpoint (°C)",
         "type": "number",
         "default": 5,
         "minimum": 0,
         "maximum": 20
       },
       "maxTemperature": {
-        "title": "Setpoint massimo (°C)",
+        "title": "Maximum setpoint (°C)",
         "type": "number",
         "default": 35,
         "minimum": 20,
         "maximum": 40
       },
       "deviceTypes": {
-        "title": "Tipi di dispositivo da esporre",
+        "title": "Device types to expose",
         "type": "array",
         "uniqueItems": true,
         "default": [
@@ -93,37 +100,37 @@
           "type": "string",
           "oneOf": [
             {
-              "title": "Termostati",
+              "title": "Thermostats",
               "enum": [
                 "thermostat"
               ]
             },
             {
-              "title": "Luci on/off",
+              "title": "On/off lights",
               "enum": [
                 "light"
               ]
             },
             {
-              "title": "Dimmer",
+              "title": "Dimmers",
               "enum": [
                 "dimmer"
               ]
             },
             {
-              "title": "Tapparelle",
+              "title": "Shutters",
               "enum": [
                 "shutter"
               ]
             },
             {
-              "title": "Automazioni on/off",
+              "title": "On/off automations",
               "enum": [
                 "switch"
               ]
             },
             {
-              "title": "Scenari",
+              "title": "Scenes",
               "enum": [
                 "scene"
               ]
@@ -132,7 +139,7 @@
         }
       },
       "exclude": {
-        "title": "Escludi (nome o idsf)",
+        "title": "Exclude (name or idsf)",
         "type": "array",
         "items": {
           "type": "string"
@@ -142,7 +149,7 @@
         "title": "Debug",
         "type": "boolean",
         "default": false,
-        "description": "Elenca nel log tutte le funzioni trovate e il traffico WebSocket (abilita anche il debug di Homebridge per vedere il traffico)."
+        "description": "Logs every function found and the WebSocket traffic (tokens, e-mail and MAC addresses are masked). For troubleshooting only."
       }
     }
   },
@@ -153,11 +160,12 @@
     "duid",
     {
       "type": "fieldset",
-      "title": "Termostato",
+      "title": "Thermostat",
       "expandable": true,
       "items": [
         "onMode",
         "scheduleSwitch",
+        "scheduleSwitchName",
         "enableCooling",
         "minTemperature",
         "maxTemperature"
@@ -165,7 +173,7 @@
     },
     {
       "type": "fieldset",
-      "title": "Avanzate",
+      "title": "Advanced",
       "expandable": true,
       "items": [
         "deviceTypes",

@@ -1,48 +1,59 @@
 # homebridge-vimar-view-cloud
 
-Plugin **non ufficiale** per [Homebridge](https://homebridge.io) che porta in HomeKit i dispositivi **Vimar View** passando dal cloud Vimar, lo stesso usato dall'app ufficiale *View*.
+**Unofficial** [Homebridge](https://homebridge.io) plugin that brings **Vimar View** devices into Apple HomeKit through the Vimar cloud, the same backend used by the official *View* app.
 
-È un port in Node.js del protocollo ricostruito dall'integrazione Home Assistant [ha-vimar-view](https://github.com/ivhazu/ha-vimar-view) (MIT, © Andrea Baronchelli).
+Tested on three stand-alone **Wi-Fi thermostats 02912** ("STW" devices). It is a Node.js port of the protocol reverse-engineered by the Home Assistant integration [ha-vimar-view](https://github.com/ivhazu/ha-vimar-view) (MIT, © Andrea Baronchelli), extended to support several devices per account.
 
-> ⚠️ Non affiliato a Vimar S.p.A. Il protocollo è stato ottenuto per reverse engineering: un aggiornamento del cloud o dell'app Vimar può romperlo senza preavviso. Serve una connessione internet: senza cloud, niente controllo da HomeKit.
+> ⚠️ Not affiliated with Vimar S.p.A. The protocol was reverse-engineered: a change to the Vimar cloud or app can break it without notice. An internet connection is required: no cloud, no HomeKit control.
 
-## Dispositivi
+## Supported devices
 
-| Funzione Vimar (`sstype`) | In HomeKit | Note |
+| Vimar function (`sstype`) | HomeKit | Notes |
 |---|---|---|
-| `SS_Clima_Zone` (termostato Wi-Fi **02912**, zone clima) | Termostato + interruttore "Programma" | temperatura, setpoint, Off/Riscalda (/Raffredda), stato caldaia |
-| `SS_Light_Switch` | Lampadina | on/off |
-| `SS_Light_Dimmer` | Lampadina dimmerabile | on/off, luminosità |
-| `SS_Shutter_Position` | Tapparella | posizione, stop |
-| `SS_Automation_OnOff` | Interruttore | on/off |
-| `SS_Scene_Executor` | Interruttore a impulso | disattivato di default |
+| `SS_Clima_Zone` (Wi-Fi thermostat **02912**, climate zones) | Thermostat + "Schedule" switch | current temperature, setpoint, Off/Heat (/Cool), heating status. **Tested.** |
+| `SS_Light_Switch` | Lightbulb | on/off |
+| `SS_Light_Dimmer` | Dimmable lightbulb | on/off, brightness |
+| `SS_Shutter_Position` | Window covering | position, stop |
+| `SS_Automation_OnOff` | Switch | on/off |
+| `SS_Scene_Executor` | Stateless switch | disabled by default |
 
-### Come si comporta il termostato
+Lights, dimmers, shutters and scenes follow the Home Assistant integration's implementation but have **not** been tested with real hardware yet. Reports are welcome.
 
-- **Off / Riscalda** dall'app Casa: Off spegne il termostato. Riscalda lo riaccende in modalità *Auto*, cioè segue il programma settimanale (configurabile con `onMode`). Se il termostato è già acceso in manuale, ricevere di nuovo "Riscalda" non lo rimette in Auto.
-- **Cambio temperatura**: come nell'app ufficiale, se il termostato è in *Auto* passa a *Manuale temporaneo* ("Timed manual") e poi applica il setpoint.
-- **Interruttore "Programma"**: acceso = segue il programma (Auto), spento = manuale permanente.
-- **Stato attuale**: "Riscalda" quando il relè è attivo (`OutStatus = Heat`), altrimenti "Spento" (inattivo).
+### Thermostat behaviour
 
-## Installazione
+- **Off / Heat** in the Home app: Off turns the thermostat off. Heat turns it back on in *Auto*, i.e. following the weekly schedule (configurable with `onMode`). If the thermostat is already on in manual mode, a repeated "Heat" does not reset it to Auto.
+- **Changing the temperature**: like the official app, if the thermostat is in *Auto* it first switches to *Timed manual*, then applies the setpoint.
+- **"Schedule" switch**: on = follow the weekly schedule (Auto), off = permanent manual.
+- **Current state**: "Heating" when the relay is active (`OutStatus = Heat`), otherwise "Off" (idle).
+
+## Installation
+
+From the Homebridge UI: search for **Vimar View Cloud** in the Plugins tab.
+
+From a terminal on the Homebridge server (official image or apt package), as the `homebridge` user:
 
 ```bash
-sudo npm install -g homebridge-vimar-view-cloud
+sudo -u homebridge env PATH=/opt/homebridge/bin:$PATH \
+  bash -c 'cd /var/lib/homebridge && npm install homebridge-vimar-view-cloud'
+sudo hb-service restart
 ```
 
-Oppure da sorgente: copia la cartella sul server Homebridge, poi `npm install` e `npm link`. Richiede Node.js 18.20 o superiore e Homebridge 1.8 o 2.x.
+> Do **not** use `sudo npm install -g` on the official image or apt package: it installs into the system Node.js, which Homebridge does not use, and the plugin will not show up.
 
-## Configurazione
+Requires Node.js 18.20+ and Homebridge 1.8 or 2.x.
+
+## Configuration
 
 ```json
 {
   "platform": "VimarViewCloud",
   "name": "Vimar View",
-  "username": "tua@email.it",
-  "password": "password MyVimar",
-  "duid": "013009FAL00087, 013009FAL00117",
+  "username": "you@example.com",
+  "password": "your MyVimar password",
+  "duid": "013009FAL00087, 013009FAL00117, 013009FAL00123",
   "onMode": "Auto",
   "scheduleSwitch": true,
+  "scheduleSwitchName": "Schedule",
   "enableCooling": false,
   "minTemperature": 5,
   "maxTemperature": 35,
@@ -52,45 +63,57 @@ Oppure da sorgente: copia la cartella sul server Homebridge, poi `npm install` e
 }
 ```
 
-| Chiave | Default | Descrizione |
+| Key | Default | Description |
 |---|---|---|
-| `username`, `password` | — | credenziali **MyVimar**, le stesse dell'app View |
-| `duid` | — | uno o più DUID separati da virgola (vedi sotto) |
-| `onMode` | `Auto` | modalità usata quando accendi il termostato da HomeKit: `Auto` (programma) o `Manual` |
-| `scheduleSwitch` | `true` | aggiunge l'interruttore "Programma" |
-| `enableCooling` | `false` | mostra la modalità Raffredda |
-| `minTemperature` / `maxTemperature` | 5 / 35 | limiti del setpoint in Casa |
-| `deviceTypes` | tutti tranne `scene` | tipi da esporre |
-| `exclude` | `[]` | nomi o `idsf` da ignorare |
-| `debug` | `false` | elenca nel log tutte le funzioni trovate; con Homebridge in debug (`-D`) mostra anche il traffico WebSocket |
+| `username`, `password` | — | **MyVimar** credentials, the same as the View app |
+| `duid` | — | one or more device DUIDs, comma-separated (see below) |
+| `onMode` | `Auto` | mode used when a thermostat is turned on from HomeKit: `Auto` (schedule) or `Manual` |
+| `scheduleSwitch` | `true` | adds the "Schedule" switch to each thermostat |
+| `scheduleSwitchName` | `Schedule` | label appended to the thermostat name for that switch |
+| `enableCooling` | `false` | show the Cool mode |
+| `minTemperature` / `maxTemperature` | 5 / 35 | setpoint range in the Home app |
+| `deviceTypes` | all but `scene` | device types to expose |
+| `exclude` | `[]` | names or `idsf` values to ignore |
+| `debug` | `false` | logs every function found and the WebSocket traffic, with tokens, e-mail and MAC addresses masked |
 
-### Dove trovo il DUID
+### Finding the DUID
 
-App **View** → **Impostazioni** → **Info di sistema** → sezione **"Informazioni sui dispositivi gateway"**. Ogni dispositivo connesso al cloud ha il suo codice, formato `013009FAL00087`:
+View app → **Settings** → **System info** → section **"Gateway devices"**. Every device connected to the cloud is listed with its own code, formatted like `013009FAL00087`:
 
-- **termostati Wi-Fi 02912** stand-alone: ogni termostato compare come **STW** e ha il **suo** DUID;
-- impianti **View Wireless**: il DUID è quello del gateway (**BLEG**).
+- **stand-alone Wi-Fi thermostats 02912** appear as **STW**, and each one has **its own** DUID;
+- **View Wireless** systems use the DUID of the gateway (**BLEG**).
 
-Se hai più dispositivi, inseriscili tutti separati da virgola: `"duid": "013009FAL00087, 013009FAL00117, 013009FAL00123"`. Il plugin fa un solo login e apre una connessione per ciascuno.
+With several devices, list them all, comma-separated. The plugin logs in once and opens one cloud connection per DUID.
 
-⚠️ **Non** usare l'*UID impianto* (quello con i trattini, tipo `9BF5F94A-…`): il cloud chiude la connessione con codice **1013** e nel log compare `closed before attach`.
+⚠️ Do **not** use the *Plant UID* (the one with dashes, like `9BF5F94A-…`). The cloud closes the connection with code **1013** and the log shows `closed before attach`.
 
-## Note tecniche
+## Troubleshooting
 
-- **Autenticazione**: OAuth2 Authorization Code + PKCE sul Keycloak `prod.vimar.cloud` (client `mobile-user-view2`). Il refresh token (uno per account, condiviso da tutti i DUID) viene salvato in `<storage Homebridge>/.vimar-view-cloud-<hash utente>.json` (permessi 600), così ai riavvii non serve rifare il login completo.
-- **Connessione**: WebSocket persistente in push (`changestatus`), keepalive ogni 25 s, riconnessione con backoff da 5 a 60 s. In caso di errore di **autenticazione** riprova ogni 10 minuti, per non far bloccare l'account.
-- **Disponibilità**: durante brevi disconnessioni Casa mostra l'ultimo stato noto. Dopo 3 minuti di cloud irraggiungibile gli accessori risultano "Nessuna risposta".
-- **Cache accessori**: se una discovery torna vuota (cloud in difficoltà) gli accessori **non** vengono rimossi, per non perdere le tue automazioni HomeKit.
+| Symptom | Cause / fix |
+|---|---|
+| Log: `closed before attach (1013 …)` | Wrong DUID (often the plant UID), or the device is offline. See *Finding the DUID*. |
+| Log: `authentication error` | Wrong MyVimar e-mail or password. After an auth error the plugin retries only every 10 minutes, to avoid locking the account. |
+| Plugin installed but not listed in the Homebridge UI | It was installed outside `/var/lib/homebridge` (e.g. with `sudo npm install -g`). Reinstall as shown in *Installation*. On a fresh Raspberry Pi OS, installing from GitHub also needs `git` (`sudo apt install git`). |
+| Values are correct in the Homebridge UI, but the Home app shows nothing or "No Response" | A HomeKit problem, not a plugin one. The home hub (HomePod / Apple TV) must be on the **same LAN** as Homebridge, because HomeKit discovery (mDNS/Bonjour) does not cross routed VPNs such as WireGuard site-to-site. Run Homebridge in the house where the thermostats' HomeKit home is. |
+| Homebridge UI: *"Failed to control accessory. Make sure the Homebridge pin for 127.0.0.1:xxxxx is set to …"* | The plugin runs in a **child bridge** with a PIN different from the main bridge. The UI controls accessories using the main bridge PIN, so remove `pin` from the child bridge's `_bridge` block (or set it to the main PIN) and restart. Existing HomeKit pairings are not affected. |
+| Removed the bridge from the Home app, now re-adding it times out | Homebridge still believes it is paired. Unpair it in the Homebridge UI settings, or give the child bridge a new `_bridge.username`, then restart and pair again. |
 
-## Test
+## How it works
+
+- **Authentication**: OAuth2 Authorization Code + PKCE against the Keycloak server at `prod.vimar.cloud` (client `mobile-user-view2`). The refresh token (one per account, shared by all DUIDs) is stored in `<Homebridge storage>/.vimar-view-cloud-<user hash>.json` with mode 600, so restarts do not need a full login.
+- **Connection**: one persistent WebSocket per DUID (`wss://prod.vimar.cloud/wssmqtt/deviceproxy`). Sequence: `attach` → `sfdiscovery` → `register`/`getstatus`. State changes are pushed with `changestatus` and commands are sent with `doaction`. A keepalive goes out every 25 s, and reconnection uses a 5–60 s backoff.
+- **Availability**: during short outages the Home app keeps the last known state. After 3 minutes without the cloud, accessories report "No Response".
+- **Accessory cache**: an empty discovery (cloud hiccup) never removes accessories, so your HomeKit automations are preserved.
+
+## Development
 
 ```bash
 npm install
 npm test
 ```
 
-I test usano un finto Keycloak e un finto server WebSocket Vimar, senza accesso al cloud reale. Coprono login, attach, discovery, push di stato, comandi del termostato, dimmer, tapparelle e riconnessione.
+The tests run against a mock Keycloak and a mock Vimar WebSocket server, with no access to the real cloud. They cover login, attach, discovery, state pushes, thermostat commands, dimmers, shutters, reconnection and multiple DUIDs.
 
-## Licenza
+## License
 
-MIT. Vedi `LICENSE`, che mantiene l'attribuzione al progetto originale.
+MIT, see `LICENSE`, which keeps the attribution to the original project.
